@@ -1,6 +1,7 @@
 package de.zottig.fortunefighters.repositories
 
 import de.zottig.fortunefighters.models.ERole
+import de.zottig.fortunefighters.models.Guild
 import de.zottig.fortunefighters.models.Role
 import de.zottig.fortunefighters.models.User
 import org.springframework.data.jpa.repository.JpaRepository
@@ -13,4 +14,9 @@ interface UserRepository : JpaRepository<User, Long> {
 
 interface RoleRepository : JpaRepository<Role, Long> {
     fun findByName(name: ERole): Role?
+}
+
+interface GuildRepository : JpaRepository<Guild, Long> {
+    fun findByUserId(userId: Long): Guild?
+    fun existsByName(name: String): Boolean
 }

@@ -1,4 +1,4 @@
-package de.zottig.fortunefighters.payloads.request
+package de.zottig.fortunefighters.dto.request
 
 import javax.validation.constraints.NotEmpty
 

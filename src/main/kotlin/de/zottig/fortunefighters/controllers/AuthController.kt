@@ -1,12 +1,14 @@
 package de.zottig.fortunefighters.controllers
 
 import de.zottig.fortunefighters.models.ERole
+import de.zottig.fortunefighters.models.Guild
 import de.zottig.fortunefighters.models.Role
 import de.zottig.fortunefighters.models.User
-import de.zottig.fortunefighters.payloads.request.LoginRequest
-import de.zottig.fortunefighters.payloads.request.SignupRequest
-import de.zottig.fortunefighters.payloads.response.JwtResponse
-import de.zottig.fortunefighters.payloads.response.MessageResponse
+import de.zottig.fortunefighters.dto.request.LoginRequest
+import de.zottig.fortunefighters.dto.request.SignupRequest
+import de.zottig.fortunefighters.dto.response.JwtResponse
+import de.zottig.fortunefighters.dto.response.MessageResponse
+import de.zottig.fortunefighters.repositories.GuildRepository
 import de.zottig.fortunefighters.repositories.RoleRepository
 import de.zottig.fortunefighters.repositories.UserRepository
 import de.zottig.fortunefighters.security.jwt.JwtUtils
@@ -40,6 +42,9 @@ class AuthController {
     var roleRepository: RoleRepository? = null
 
     @Autowired
+    var guildRepository: GuildRepository? = null
+
+    @Autowired
     var encoder: PasswordEncoder? = null
 
     @Autowired
@@ -51,7 +56,7 @@ class AuthController {
                 UsernamePasswordAuthenticationToken(loginRequest!!.username, loginRequest.password))
         SecurityContextHolder.getContext().authentication = authentication
         val jwt = jwtUtils!!.generateJwtToken(authentication)
-        val userDetails = authentication.getPrincipal() as UserDetailsImpl
+        val userDetails = authentication.principal as UserDetailsImpl
         val roles = userDetails.authorities.stream()
                 .map { item: GrantedAuthority -> item.authority }
                 .collect(Collectors.toList())
@@ -64,6 +69,7 @@ class AuthController {
 
     @PostMapping("/signup")
     fun registerUser(@RequestBody signUpRequest: @Valid SignupRequest?): ResponseEntity<*> {
+
         if (userRepository!!.existsByUsername(signUpRequest!!.username!!)) {
             return ResponseEntity
                     .badRequest()
@@ -75,39 +81,52 @@ class AuthController {
                     .body(MessageResponse("Error: Email is already in use!"))
         }
 
+        if (guildRepository!!.existsByName(signUpRequest.guildname!!)) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(MessageResponse("Error: Guild name is already in use!"))
+        }
+
         // Create new user's account
-        val user = User(signUpRequest.username,
+        var user = User(signUpRequest.username,
                 signUpRequest.email,
                 encoder!!.encode(signUpRequest.password))
         val strRoles = signUpRequest.role
         val roles: MutableSet<Role> = HashSet<Role>()
         if (strRoles == null) {
             val userRole: Role = roleRepository!!.findByName(ERole.ROLE_USER)
-                    ?: throw RuntimeException("Error: Role is not found.")
+                    ?: throw RuntimeException("Error: Role.kt is not found.")
             roles.add(userRole)
         } else {
             strRoles.forEach(Consumer { role: String? ->
                 when (role) {
                     "admin" -> {
                         val adminRole: Role = roleRepository!!.findByName(ERole.ROLE_ADMIN)
-                                ?: throw RuntimeException("Error: Role is not found.")
+                                ?: throw RuntimeException("Error: Role.kt is not found.")
                         roles.add(adminRole)
                     }
                     "mod" -> {
                         val modRole: Role = roleRepository!!.findByName(ERole.ROLE_MODERATOR)
-                                ?: throw RuntimeException("Error: Role is not found.")
+                                ?: throw RuntimeException("Error: Role.kt is not found.")
                         roles.add(modRole)
                     }
                     else -> {
                         val userRole: Role = roleRepository!!.findByName(ERole.ROLE_USER)
-                                ?: throw RuntimeException("Error: Role is not found.")
+                                ?: throw RuntimeException("Error: Role.kt is not found.")
                         roles.add(userRole)
                     }
                 }
             })
         }
         user.roles=roles
-        userRepository!!.save<User>(user)
+        user = userRepository!!.save<User>(user)
+
+        // Create new Guild
+        var guild = Guild(signUpRequest.guildname, user)
+        guild = guildRepository!!.save<Guild>(guild)
+
         return ResponseEntity.ok(MessageResponse("User registered successfully!"))
+
+
     }
 }

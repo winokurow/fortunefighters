@@ -1,17 +1,17 @@
 package de.zottig.fortunefighters.models
 
 import lombok.Data
-import java.util.HashSet
+import java.util.*
 import javax.persistence.*
 import javax.validation.constraints.Email
-import javax.validation.constraints.NotEmpty
 import javax.validation.constraints.NotNull
 import javax.validation.constraints.Size
+
 
 @Data
 @Entity
 @Table(name = "users",
-        uniqueConstraints=arrayOf(
+        uniqueConstraints = arrayOf(
                 UniqueConstraint(columnNames = arrayOf("username", "email"))))
 class User {
     @Id

@@ -1,4 +1,4 @@
-package de.zottig.fortunefighters.payloads.request
+package de.zottig.fortunefighters.dto.request
 
 import javax.validation.constraints.Email
 import javax.validation.constraints.NotEmpty
@@ -18,4 +18,8 @@ class SignupRequest {
     @NotEmpty
     @Size(min = 6, max = 40)
     var password: String? = null
+
+    @NotEmpty
+    @Size(min = 6, max = 100)
+    var guildname: String? = null
 }
